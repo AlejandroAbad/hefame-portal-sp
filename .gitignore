@@ -13,6 +13,7 @@
 /build
 *.crt
 *.key
+config.json
 
 # misc
 .DS_Store
