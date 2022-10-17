@@ -31,7 +31,7 @@ module.exports = function rutasSaml2(app) {
 		let callbackUrl = req.query.callback;
 
 		if (!callbackUrl) {
-			res.sendStatus(400).json({
+			res.status(400).json({
 				errores: [
 					{
 						"codigo": "SAML:NO_CALLBACK_URL",
@@ -70,7 +70,7 @@ module.exports = function rutasSaml2(app) {
 
 			let callback = req.cookie('hul_caller');
 
-			res.send("Hello #{saml_response.user.name_id}!");
+			res.send("Hello #{saml_response.user.name_id}! - Caller: " + callback);
 		});
 	});
 
@@ -84,7 +84,7 @@ module.exports = function rutasSaml2(app) {
 
 		samlSP.create_logout_request_url(samlIDP, options, function (err, logout_url) {
 			if (err != null)
-				return res.send(500);
+				return res.sendStatus(500);
 			res.redirect(logout_url);
 		});
 	});
