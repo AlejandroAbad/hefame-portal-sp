@@ -1,0 +1,28 @@
+{
+	"numeroWorkers": 1,
+	"puertoHttp": 4000,
+	"sso" : {
+		"idp": {
+			"login": "https://idp.example.com/login",
+			"logout": "https://idp.example.com/logout",
+			"certificados": [
+				"~/certificados/idp.crt", 
+				"~/certificados/intermeciate.crt" 
+			]
+		},
+		"sp": {
+			"urlBase": "https://empleado.hefame.es",
+			"rutaBase": "/ssf",
+			"endpoints": {
+				"metadata": "/metadata.xml",
+				"login": "/login",
+				"logout": "/logout",
+				"assert": "/assert"
+			},
+			"rsa": {
+				"privada": "~/certificados/sp.key",
+				"publica": "~/certificados/sp.crt"
+			}
+		}
+	}
+}
