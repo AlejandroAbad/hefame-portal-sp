@@ -4,9 +4,12 @@ require('./bootstrap')('worker').then(() => {
 
 	const C = global.configuracion;
 
-	const app = require('express')();
+	const express = require('express');
+
+	const app = express();
 	app.use(require('cookie-parser')());
 	app.use(require('cors')());
+	app.use(express.urlencoded({ extended: true }))
 	app.disable('x-powered-by');
 	app.disable('etag');
 	app.use(require('body-parser').json({ extended: true, limit: '1mb' }));

@@ -1,5 +1,6 @@
 const saml2 = require('saml2-js');
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
 const C = global.configuracion;
 
 module.exports = function rutasSaml2(app) {
@@ -8,7 +9,8 @@ module.exports = function rutasSaml2(app) {
 		entity_id: `${C.sso.sp.urlBase}${C.sso.sp.rutaBase}${C.sso.sp.endpoints.metadata}`,
 		private_key: fs.readFileSync(C.sso.sp.rsa.privada).toString(),
 		certificate: fs.readFileSync(C.sso.sp.rsa.publica).toString(),
-		assert_endpoint: `${C.sso.sp.urlBase}${C.sso.sp.rutaBase}${C.sso.sp.endpoints.assert}`
+		assert_endpoint: `${C.sso.sp.urlBase}${C.sso.sp.rutaBase}${C.sso.sp.endpoints.assert}`,
+		allow_unencrypted_assertion: true
 	});
 
 	const samlIDP = new saml2.IdentityProvider({
@@ -54,28 +56,34 @@ module.exports = function rutasSaml2(app) {
 
 	// Assert endpoint for when login completes
 	app.post(C.sso.sp.endpoints.assert, function (req, res) {
-		let options = { request_body: req.body };
-		console.log(options)
+		let hul_caller = Buffer.from(req.cookies.hul_caller, 'base64').toString('utf-8');
+		res.cookie('hul_caller', '');
+
+		let options = {request_body: req.body};	
 		samlSP.post_assert(samlIDP, options, function (err, saml_response) {
 			if (err != null) {
 				console.log(err);
 				return res.sendStatus(500);
 			}
 
-			// Save name_id and session_index for logout
-			// Note:  In practice these should be saved in the user session, not globally.
-			console.log('saml_response', saml_response);
-			//name_id = saml_response.user.name_id;
-			//session_index = saml_response.user.session_index;
+			let payload = {
+				cliente: saml_response.user.name_id,
+				sess_idx: saml_response.user.session_index,
+				salesforce: {
+					user_id: saml_response.user.attributes.userId[0],
+					username: saml_response.user.attributes.username[0],
+					email: saml_response.user.attributes.email[0],
+					is_portal_user: saml_response.user.attributes.is_portal_user[0]
+				},
+				exp: Math.floor((new Date()).getTime()/1000) + 3600
+			}
 
-			let callback = req.cookie('hul_caller');
-
-			res.send("Hello #{saml_response.user.name_id}! - Caller: " + callback);
+			res.redirect(hul_caller + '?token=' + jwt.sign(payload, 'Si?oQue?') );
+//			res.json(saml_response.user);
 		});
 	});
 
 	// Starting point for logout
-
 	app.get(C.sso.sp.endpoints.logout, function (req, res) {
 		var options = {
 			name_id: req.query.uid,
